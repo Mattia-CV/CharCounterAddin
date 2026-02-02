@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contoso Task Pane Add-in</title>
+
+    <!-- Office JavaScript API -->
+    <script
+      type="text/javascript"
+      src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
+    ></script>
+
+    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
+    <link
+      rel="stylesheet"
+      href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"
+    />
+
+    <!-- Template styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body class="ms-font-m ms-welcome ms-Fabric">
+    <div class="logo">
+      <img
+        width="auto"
+        height="90"
+        src="../../assets/cambiaverso.png"
+        alt="Cambiaverso"
+        title="Cambiaverso"
+      />
+    </div>
+    <main class="ms-welcome__main">
+      <!-- Breakpoint Control Section -->
+      <div
+        class="ms-font-m"
+        style="margin-top: 20px; border-top: 1px solid #eaeaea; padding-top: 10px"
+      >
+        <p class="white">Posiziona il cursore dove preferisci per iniziare il conteggio</p>
+
+        <button id="set-breakpoint-btn" class="ms-Button ms-Button--primary">
+          <span class="ms-Button-label">Aggiungi segnaposto</span>
+        </button>
+        <button id="clear-breakpoint-btn" class="ms-Button">
+          <span class="ms-Button-label">Pulisci segnaposto</span>
+        </button>
+        <button id="go-to-breakpoint-btn" class="ms-Button" disabled>
+          <span class="ms-Button-label">Vai al segnaposto</span>
+        </button>
+        <div>
+          <p class="white">Seleziona il colore del segnaposto</p>
+          <select name="color" id="color">
+            <option value="red">Rosso</option>
+            <option value="green">Verde</option>
+            <option value="blue">Blu</option>
+          </select>
+        </div>
+        <p class="red">
+          <strong>Ricordati di rimuovere il segnaposto prima di stampare!!</strong>
+        </p>
+      </div>
+
+      <li class="ms-ListItem">
+        <span class="ms-font-m white">Totale:</span>
+        <span id="total-count" class="ms-fontWeight-semibold white">Caricamento...</span>
+      </li>
+      <li class="ms-ListItem">
+        <span class="ms-font-m white">Selezionati:</span>
+        <span id="selection-count" class="ms-fontWeight-semibold white">0</span>
+      </li>
+      <li class="ms-ListItem">
+        <span class="ms-font-m white">Posizione (dall'inizio):</span>
+        <span id="cursor-count" class="ms-fontWeight-semibold white">0</span>
+      </li>
+      <li class="ms-ListItem">
+        <span class="ms-font-m white">Dal segnaposto:</span>
+        <span id="breakpoint-count" class="ms-fontWeight-semibold white">N/A</span>
+      </li>
+    </main>
+  </body>
+</html>
