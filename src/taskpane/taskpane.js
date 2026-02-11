@@ -84,40 +84,77 @@ async function clearBreakpoint() {
 async function setBreakpoint() {
     await Word.run(async (context) => {
         const doc = context.document;
-        const colorSelect = document.getElementById("color");
-        const selectedColor = colorSelect ? colorSelect.value : "red";
+        const originalSelection = doc.getSelection();
 
-        // Rimuovi vecchio se esiste
-        try {
-            const oldBookmark = doc.getBookmarkRange("MyCharCounter_Breakpoint");
-            oldBookmark.delete();
-            await context.sync();
-        } catch (error) {}
-
-        // Inserisci nuovo
-        const selection = doc.getSelection();
-        const markerText = "🚩";
-        
-        // UI Updates
-        isBookmarkInserted = true;
-        const btn = document.getElementById("set-breakpoint-btn");
-        const btnClear = document.getElementById("clear-breakpoint-btn");
-        const btnGoTo = document.getElementById("go-to-breakpoint-btn");
-        
-        btnClear.removeAttribute("disabled");
-        if (btnGoTo) btnGoTo.removeAttribute("disabled");
-        if (btn) btn.textContent = "Aggiorna segnaposto";
-
-        // Inserimento testo e formattazione
-        const insertedRange = selection.insertText(markerText, Word.InsertLocation.replace);
-        insertedRange.font.color = selectedColor;
-        insertedRange.insertBookmark("MyCharCounter_Breakpoint");
-        insertedRange.getRange("After").select();
-        
+        // 1. Controlli Preventivi sulla Selezione
+        // Carichiamo il tipo di selezione per capire se è valida per inserire testo
+        originalSelection.load("type");
         await context.sync();
-        updateStats();
+
+        // Se l'utente ha selezionato un'immagine o una forma (InlineShape/Shape), 
+        // l'inserimento di testo spesso fallisce o sostituisce l'immagine.
+        // Se è "None", non c'è cursore.
+        if (originalSelection.type === "None" || originalSelection.type === "InlineShape" || originalSelection.type === "Shape") {
+            console.warn("Posizione non valida per il segnaposto (Immagine o Nessuna selezione).");
+            // Opzionale: Mostra un avviso visibile all'utente
+            return; 
+        }
+
+        // 2. Pulizia Vecchio Bookmark (Codice sicuro)
+        try {
+            const oldBookmark = doc.getBookmarkRangeOrNullObject("MyCharCounter_Breakpoint");
+            await context.sync();
+            if (!oldBookmark.isNullObject) {
+                oldBookmark.delete();
+                await context.sync();
+            }
+        } catch (e) {
+            console.log("Errore rimozione vecchio (trascurabile): " + e);
+        }
+
+        // 3. Inserimento Nuovo (Protetto)
+        try {
+            // Ricarichiamo la selezione per sicurezza
+            const selection = doc.getSelection();
+            
+            const colorSelect = document.getElementById("color");
+            const selectedColor = colorSelect ? colorSelect.value : "red";
+            const markerText = "🚩";
+
+            // Inseriamo il testo
+            const insertedRange = selection.insertText(markerText, Word.InsertLocation.replace);
+            
+            // Applichiamo proprietà
+            insertedRange.font.color = selectedColor;
+            insertedRange.insertBookmark("MyCharCounter_Breakpoint");
+
+            // Spostiamo il cursore DOPO il segnaposto per evitare di scrivere "dentro" di esso
+            insertedRange.getRange("After").select();
+
+            await context.sync();
+
+            // Aggiornamento UI solo se tutto è andato bene
+            isBookmarkInserted = true;
+            const btn = document.getElementById("set-breakpoint-btn");
+            const btnClear = document.getElementById("clear-breakpoint-btn");
+            const btnGoTo = document.getElementById("go-to-breakpoint-btn");
+            const btnPrint = document.getElementById("prepare-print-btn");
+
+            if (btnClear) btnClear.removeAttribute("disabled");
+            if (btnGoTo) btnGoTo.removeAttribute("disabled");
+            if (btnPrint) btnPrint.removeAttribute("disabled");
+            if (btn) btn.textContent = "Aggiorna segnaposto";
+
+            updateStats();
+
+        } catch (error) {
+            console.error("ERRORE CRITICO durante l'inserimento: ", error);
+            // Se fallisce qui (GeneralException), è perché Word si rifiuta di scrivere in quel punto specifico.
+            // Non possiamo farci molto se non avvisare.
+        }
     });
 }
+
 
 
 async function updateStats() {
