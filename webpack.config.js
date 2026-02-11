@@ -1,19 +1,33 @@
 /* eslint-disable no-undef */
-
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlProd = "https://www.contoso.com/";
 
-async function getHttpsOptions() {
-  const httpsOptions = await devCerts.getHttpsServerOptions();
-  return { ca: httpsOptions.ca, key: httpsOptions.key, cert: httpsOptions.cert };
+function getHttpsOptions() {
+  const certPath = path.join(os.homedir(), '.office-addin-dev-certs');
+
+  if (!fs.existsSync(path.join(certPath, 'localhost.key')) || !fs.existsSync(path.join(certPath, 'localhost.crt'))) {
+    console.warn("Certificati non trovati in " + certPath + ". Il server potrebbe non avviarsi in HTTPS.");
+    return {};
+  }
+
+  return {
+    key: fs.readFileSync(path.join(certPath, 'localhost.key')),
+    cert: fs.readFileSync(path.join(certPath, 'localhost.crt')),
+    ca: fs.readFileSync(path.join(certPath, 'ca.crt')),
+  };
 }
 
 module.exports = async (env, options) => {
   const dev = options.mode === "development";
+  const httpsOptions = getHttpsOptions();
+
   const config = {
     devtool: "source-map",
     entry: {
@@ -82,12 +96,14 @@ module.exports = async (env, options) => {
       }),
     ],
     devServer: {
+      host: '0.0.0.0',
+      allowedHosts: 'all',
       headers: {
         "Access-Control-Allow-Origin": "*",
       },
       server: {
         type: "https",
-        options: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
+        options: httpsOptions
       },
       port: process.env.npm_package_config_dev_server_port || 3000,
     },
